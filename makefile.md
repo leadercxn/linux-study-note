@@ -66,9 +66,30 @@
         把“There is a big tree”中的“a”替换成“the”，返回结果是“There is the big tree”。
     ```
 
+    6. `abspath`
+    用法： $(abspath names)  , 该函数主要用于将names中的各路径转换成绝对路径，并将转换后的结果返回
+    ```demo
+        C_SOURCE_FILES += \
+                $(abspath ./app/main.c) \
+    ```
+
+    7. `patsubst` 替换
+    格式：$(patsubst pattern, replacement, text)
+    功能：查找< text >中的单词（单词以“空格”、“Tab”或“回车”“换行”分隔）是否符合模式< pattern >，如果匹配的话，则以< replacement >替换。这里，< pattern >可以包括通配符“%”，表示任意长度的字串。如果< replacement >中也包含“%”，那么，< replacement >中的这个“%”将是< pattern >中的那个“%”所代表的字串。（可以用“/”来转义，以“/%”来表示真实含义的“%”字符）
+
+    8. `foreach` 遍历
+    格式：$(foreach <var>,<list>,<text>)
+    功能： 把参数<list>;中的单词逐一取出放到参数<var>;所指定的变量中，然后再执行< text>;所包含的表达式。每一次<text>;会返回一个字符串，循环过程中，<text>;的所返回的每个字符串会以空格分隔，最后当整个循环结束时，<text>;所返回的每个字符串所组成的整个字符串（以空格分隔）将会是foreach函数的返回值。所以，<var>;最好是一个变量名，<list>;可以是一个表达式，而<text>;中一般会使用<var>;这个参数来依次枚举<list>;
+    ```demo
+        names := a b c d
+        files := $(foreach n,$(names),$(n).o)
+
+        输出：$(files)的值是"a.o b.o c.o d.o"
+    ```
 
 
 
 
 
 
+* 可选参数
