@@ -31,10 +31,10 @@
 * 关键字
     1. `notdir`   去除所有的目录信息，SRC里的文件名列表将只有文件名。
     ```demo
-        PROJNAME := $(notdir $(shell pwd))
+        PROJNAME := $(notdir $(shell pwd)/a.c)
 
         $(shell pwd) ==> /Application/sensoro/vs_pro/git_hub/sss_alarm
-        $(notdir $(shell pwd)) ==> sss_alarm
+        $(notdir $(shell pwd)/a.c) ==> a.c
         最后返回最后一级路径
     ```
 
@@ -87,9 +87,86 @@
         输出：$(files)的值是"a.o b.o c.o d.o"
     ```
 
+    9. `dir`取目录函数
+    格式： $(dir name)
+    ```demo
+        $(dir src/foo.c  a.c)
+        输出： src/ ./
+    ```
 
+    10. `call` 回调、引用自定义函数
+    格式： $(call VARIABLE,PARAM,PARAM,...)
+    g说明： 在执行时,将它的参数"PARAM"依次赋给临时变量"$(1)","$(2)".call对参数的数目没有限制，也可以没有参数值。最后再对VARIABLE展开后的表达式进行处理.
+    函数返回值:VARIABLE展开后的表达式的值
 
+    注意：call函数中对VARIABLE的调用,直接给函数或变量名就好了，不要用"$";多个PARAM使用逗号分割开,且逗号和PARAM之间不能有空格，否则会导致解析异常
+    ```demo
+        #不带参
+        define FUNC1
+        $(info echo 3-"hello")
+        endef
+        $(call FUNC1)
+        all:
+            @echo Done
 
+        #带参
+        define FUNC1
+        $(info echo 4-$(1) $(2))
+        endef
 
+        $(call FUNC1,hello,wolrd)
+
+        all:
+            @echo Done    
+    ```
+
+    11. `strip ` 去空格函数
+    格式： $(strip string)
+    ```C
+        str1 := abc  asd
+        str2 := a b  c
+        str3 := a     b     c
+
+        all:
+            @echo $(strip $(str1))
+            @echo $(strip $(str2))
+            @echo $(strip $(str3))
+
+        输出结果：
+        abc asd
+        a b c
+        a b c
+    ```
+
+    12. `firstword ` 首单词函数
+    格式： $(firstword NAME1 NAME2) ,返回NAME1
+    ```demo
+        $(firstword foo bar) 
+
+        返回值为“foo”
+    ```
+
+    13. `filter` 过滤函数
+    格式： $(filter <pattern...>,<text> )
+    说明： 在text中找出 符合pattern的字符串
+    ```demo
+        source := a.s b.c c.cpp
+        $(filter %.c %.s, $(source))    # 空格分开
+
+        返回的是a.s b.c
+    ```
+
+    13. `filter-out` 反过滤函数，和“filter”函数实现的功能相反
+    格式：$(filter-out PATTERN…,TEXT)
+    说明：过滤掉字串“TEXT”中所有符合模式“PATTERN”的单词，保留所有不符合此模式的单词。可以有多个模式。存在多个模式时，模式表达式之间使用空格分割。
+    ```demo
+        objects=main1.o foo.o main2.o bar.o 
+
+        mains=main1.o main2.o
+
+        $(filter-out$(mains),$(objects))
+
+        实现了去除变量“objects”中“mains”定义的字串（文件名）功能。它的返回值为“foo.o bar.o”。
+    ```
 
 * 可选参数
