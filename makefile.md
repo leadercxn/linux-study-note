@@ -156,7 +156,7 @@
         返回的是a.s b.c
     ```
 
-    13. `filter-out` 反过滤函数，和“filter”函数实现的功能相反
+    14. `filter-out` 反过滤函数，和“filter”函数实现的功能相反
     格式：$(filter-out PATTERN…,TEXT)
     说明：过滤掉字串“TEXT”中所有符合模式“PATTERN”的单词，保留所有不符合此模式的单词。可以有多个模式。存在多个模式时，模式表达式之间使用空格分割。
     ```demo
@@ -169,4 +169,36 @@
         实现了去除变量“objects”中“mains”定义的字串（文件名）功能。它的返回值为“foo.o bar.o”。
     ```
 
+    15. `sort` 排序函数 兼 去字符串中的重复单词
+    格式： $(sort foo bar lose foo)
+    ```C
+        $(sort foo bar lose foo) 
+
+        $(sort foo bar lose foo) 
+    ```
+
+    16. `vpath` 指定某类型文件的搜索路径
+    ```demo
+        vpath %.h include    //指定.h类型文件的搜索路径是include
+    ```
+
 * 可选参数
+
+    `-C`    -C $(KDIR) 指明跳转到源码目录下读取那里的Makefile；
+    `M`     M=$(PWD) 表明然后返回到当前目录继续读入、执行当前的Makefile
+    `-f`    指定特定的Makefile 。 make -f file
+    `-e`    环境变量覆盖Makefile文件
+
+    ```demo
+        gcc -o hello hello.c -I /home/hello/include -L /home/hello/lib -lworld
+    ```
+    `-I`     -I /home/hello/include表示将/home/hello/include目录作为第一个寻找头文件的目录,寻找的顺序是：/home/hello/include-->/usr/include-->/usr/local/include
+    `-L`     -L /home/hello/lib表示将/home/hello/lib目录作为第一个寻找库文件的目录，寻找的顺序是：/home/hello/lib-->/lib-->/usr/lib-->/usr/local/lib
+            -lworld 表示在上面的lib的路径中寻找libworld.so动态库文件（如果gcc编译选项中加入了“-static”表示寻找libworld.a静态库文件）
+
+    `-c`      -c 编译和汇编，但不要链接。
+
+    `-l`(小写L)     #lc 是link libc
+                    #lm 是link libm	-lm选项告诉编译器，我们程序中用到的数学函数要到这个库文件里找
+                    #lz 是link libz 
+                    #-lpthread posix线程 
