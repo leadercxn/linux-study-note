@@ -182,6 +182,33 @@
         vpath %.h include    //指定.h类型文件的搜索路径是include
     ```
 
+    17. `word ` 取单词函数
+    格式： $(word N,TEXT) 
+    函数功能：取字串“TEXT”中第“N”个单词（“N”的值从 1开始）。 
+    返回值：返回字串“TEXT”中第“N”个单词。 
+    函数说明：如果“N”值大于字串“TEXT”中单词的数目，返回空字符串。如果“N”为 0，出错！ 
+    ```C
+    $(word 2, foo bar baz) 
+
+    返回值为“bar”
+    ```
+
+    18. `export` 将被声明的变量添加到该工程的环境变量中
+    在 GNU make 中，实现此功能的指示符是 export。当一个变量使用 export 进行声明后，变量和它的值将被加入到当前工作的环境变量中，以后在 make 执行的所有规则的命令都可以使用这个变量。
+
+    而当没有使用指示符 export 对任何变量进行声明的情况下，上层 make 只将那些已经初始化的环境变量（在执行 make 之前已经存在的环境变量）和使用命令行指定的变量（如命令make CFLAGS +=-g 或者 make –e CFLAGS +=-g）传递给子 make 过程
+    ```demo
+        KCONFIG_CONFIG = .config
+        KCONFIG_AUTOHEADER = application/kconfig.h
+        KCONFIG_AUTOCONFIG = build/include/config/auto.conf
+        KCONFIG_TRISTATE = build/include/config/tristate.conf
+
+        export KCONFIG_CONFIG KCONFIG_AUTOHEADER KCONFIG_AUTOCONFIG KCONFIG_TRISTATE
+    ```
+
+
+
+
 * 可选参数
 
     `-C`    -C $(KDIR) 指明跳转到源码目录下读取那里的Makefile；
@@ -202,3 +229,6 @@
                     #lm 是link libm	-lm选项告诉编译器，我们程序中用到的数学函数要到这个库文件里找
                     #lz 是link libz 
                     #-lpthread posix线程 
+
+* Makefile的内嵌变量
+    1. CURDIR   Makefile的内嵌变量，自动设置为当前目录
