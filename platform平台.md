@@ -9,10 +9,8 @@
 | 驱动4 |                       | 设备4 |
 | 驱动5 |                       | 设备5 |
 
-## 数据结构
-* 路径:  include/linux/device.h
-
-* bus_type
+## 总线数据结构 
+* bus_type 表示(没说是platform)总线  路径:include/linux/device.h
 ```C
     struct bus_type 
     {
@@ -39,20 +37,20 @@
     };
 ```
 
-## platform 总线
-* 路径:  drivers/base/platform.c
-* 定义
-```C
-    struct bus_type platform_bus_type = 
-    {
-        .name = "platform",
-        .dev_groups = platform_dev_groups,
-        .match = platform_match,
-        .uevent = platform_uevent,
-        .pm = &platform_dev_pm_ops,
-    };
-```
-    对应的匹配函数 platform_dev_groups()
+## platform总线 (是总线的一个实例)
+* 定义  路径:  drivers/base/platform.c
+    ```C
+        struct bus_type platform_bus_type = 
+        {
+            .name = "platform",
+            .dev_groups = platform_dev_groups,
+            .match = platform_match,
+            .uevent = platform_uevent,
+            .pm = &platform_dev_pm_ops,
+        };
+    ```
+
+    * 对应的匹配函数 .match 接口
     ```C
         static int platform_match(struct device *dev,struct device_driver *drv)
         {
@@ -64,26 +62,208 @@
                 return !strcmp(pdev->driver_override, drv->name);
 
             /* Attempt an OF style match first */
-            if (of_driver_match_device(dev, drv))
+            if (of_driver_match_device(dev, drv))   // of类型匹配， 设备树采用匹配方式
                 return 1;
 
             /* Then try ACPI style match */
-            if (acpi_driver_match_device(dev, drv))
+            if (acpi_driver_match_device(dev, drv)) // ACPI匹配
                 return 1;
 
             /* Then try to match against the id table */
             if (pdrv->id_table)
-                return platform_match_id(pdrv->id_table, pdev) != NULL;
+                return platform_match_id(pdrv->id_table, pdev) != NULL; //id_table 匹配，每个 platform_driver 结构体有一个 id_table成员变量，顾名思义，保存了很多 id 信息。这些 id 信息存放着这个 platformd 驱动所支持的驱动类型
                 
             /* fall-back to driver name match */
-            return (strcmp(pdev->name, drv->name) == 0);
+            return (strcmp(pdev->name, drv->name) == 0);    //第四种匹配方式，如果第三种匹配方式的 id_table 不存在的话就直接比较驱动和设备的 name 字段，看看是不是相等，如果相等的话就匹配成功 。 常用
         }
     ```
 
+    * 着重解释:   设备树匹配的方式
+    `of_driver_match_device()` device_driver 结构体(表示设备驱动)中有个名为 of_match_table的成员变量，此成员变量保存着驱动的 compatible匹配表，设备树中的每个设备节点的 compatible 属性会和 of_match_table 表中的所有成员比较，查看是否有相同的条目，如果有的话就表示设备和此驱动匹配，设备和驱动匹配成功以后 probe 函数就会执行
 
 
+## platform 驱动
+* platform驱动数据结构 include/linux/platform_device.h
+    ```C
+        struct platform_driver {
+                                    int (*probe)(struct platform_device *);     //驱动与设备匹配成功以后 probe 函数就会执行，import
+                                    int (*remove)(struct platform_device *);
+                                    void (*shutdown)(struct platform_device *);
+                                    int (*suspend)(struct platform_device *, pm_message_t state);
+                                    int (*resume)(struct platform_device *);
+                                    struct device_driver driver;                //device_driver 结构体变量
+                                    const struct platform_device_id *id_table;  //platform总线 匹配驱动和设备 采用的方法
+                                    bool prevent_deferred_probe;
+                                };
+    ```
+    * 层层递进的结构体
+        1. platform平台设备id数据结构体  struct platform_device_id 
+        ```C
+            struct platform_device_id {
+                                        char name[PLATFORM_NAME_SIZE];
+                                        kernel_ulong_t driver_data;
+                                    };
+        ```
+        2. 设备驱动结构体(有点混淆) , 路径： include/linux/device.h
+        ```C
+            struct device_driver {
+                                    const char *name;
+                                    struct bus_type *bus;
+                                    struct module *owner;
+                                    const char *mod_name; /* used for built-in modules */
+                                    bool suppress_bind_attrs; /* disables bind/unbind via sysfs */
+                                    const struct of_device_id *of_match_table;      //采用设备树配对表
+                                    const struct acpi_device_id *acpi_match_table;
+                                    int (*probe) (struct device *dev);
+                                    int (*remove) (struct device *dev);
+                                    void (*shutdown) (struct device *dev);
+                                    int (*suspend) (struct device *dev, pm_message_t state);
+                                    int (*resume) (struct device *dev);
+                                    const struct attribute_group **groups;
+                                    const struct dev_pm_ops *pm;
+                                    struct driver_private *p;
+                                };
+        ```
+        * 其中 of_device_id 结构体类型
+            ```C
+                struct of_device_id {
+                char name[32];
+                char type[32];
+                char compatible[128];   //import,设备树就是通过设备节点的 compatible 属性值和 of_match_table 中每个项目的 compatible 成员变量进行比较，如果有相等的就表示设备和此驱动匹配成功
+                const void *data;
+                };
+            ```
+### platform底层驱动流程
+1. 定义一个 platform_driver 结构体变量 ，实现结构体中的各个成员变量，重点是实现 匹配方法
+2. 编写 probe 函数 ，当 驱动 和 设备 匹配成功以后，probe函数就会执行
+3. 定义，初始化好 platform_driver 结构体变量后， 需在驱动入口函数里调用 platform_driver_register() 函数向linux内核注册一个platform驱动
+    注册函数
+    ```C
+        int platform_driver_register (struct platform_driver *driver)
+
+        driver: 注册的 platform 驱动
+        返回值： 负数 失败 ; 0 ，成功
+    ```
+
+    注销函数
+    ```C
+        void platform_driver_unregister(struct platform_driver *drv)
+
+        drv：要卸载的 platform 驱动。
+        返回值： 无。
+    ```
+
+* platform 驱动框架
+    ```C
+        /* 设备结构体 */
+        struct xxx_dev{
+            struct cdev cdev;
+            /* 设备结构体其他具体内容 */
+        };
+
+        struct xxx_dev xxxdev; /* 定义个设备结构体变量 */
+
+        static int xxx_open(struct inode *inode, struct file *filp)
+        {
+            /* 函数具体内容 */
+            return 0;
+        }
+
+        static ssize_t xxx_write(struct file *filp, const char __user *buf, size_t cnt, loff_t *offt)
+        {
+            /* 函数具体内容 */
+            return 0;
+        }
+
+        /**
+        * 字符设备驱动操作集
+        */
+        static struct file_operations xxx_fops = {
+            .owner = THIS_MODULE,
+            .open = xxx_open,
+            .write = xxx_write,
+        };
+
+        /*
+        * platform 驱动的 probe 函数
+        * 驱动与设备匹配成功以后此函数就会执行
+        */
+        static int xxx_probe(struct platform_device *dev)
+        {
+            ......
+            cdev_init(&xxxdev.cdev, &xxx_fops); /* 注册字符设备驱动 */
+            /* 函数具体内容 */
+            return 0;
+        }
+
+        static int xxx_remove(struct platform_device *dev)
+        {
+            ......
+            cdev_del(&xxxdev.cdev);/* 删除 cdev */
+            /* 函数具体内容 */
+            return 0;
+        }
+
+        /* 匹配列表 important*/
+        static const struct of_device_id xxx_of_match[] = {
+            { .compatible = "xxx-gpio" },   //该驱动的 compatible 特性 ，用来 匹配设备树中 具有相同 compatable 属性的设备
+            { /* Sentinel */ }              //必须为空
+        };
+
+        /*
+        * platform 平台驱动结构体
+        */
+
+        static struct platform_driver xxx_driver = 
+        {
+            .driver = {
+                .name = "caonima",                  //用于传统的驱动与设备匹配（无设备树）
+                .of_match_table = xxx_of_match, //用于设备树下的驱动与设备检查（有设备树）
+            },
+            .probe = xxx_probe,
+            .remove = xxx_remove,
+        };
+
+        /* 驱动模块加载 */
+        static int __init xxxdriver_init(void)
+        {
+            return platform_driver_register(&xxx_driver);
+        }
+
+        /* 驱动模块卸载 */
+        static void __exit xxxdriver_exit(void)
+        {
+            platform_driver_unregister(&xxx_driver);
+        }
+
+        module_init(xxxdriver_init);
+        module_exit(xxxdriver_exit);
+    ```
+
+    框架大概说明：
+    xxx_probe 函数，当驱动和设备匹配成功以后此函数就会执行，以前在驱动入口 init 函数里面编写的字符设备驱动程序就全部放到此 probe 函数里面。比如注册字符设备驱动、添加 cdev、创建类等等。
+
+    xxx_remove 函数， platform_driver 结构体中的 remove 成员变量，当关闭 platfor备驱动的时候此函数就会执行，以前在驱动卸载 exit 函数里面要做的事情就放到此函数中来。比如，使用 iounmap 释放内存、删除 cdev，注销设备号等等。
 
 
+## platform 设备
+1. 支持设备树的话，直接在设备树上添加
+2. 折腾式操作： 用 platform_device 这个结构体表示 platform 设备
 
-
-
+* 数据结构，路径 include/linux/platform_device.h
+```C
+struct platform_device {
+    const char *name;   //设备的名字（important , 要和 platform 驱动匹配的name 字段相同,如上述的name = "caonima"）
+    int id;
+    bool id_auto;
+    struct device dev;
+    u32 num_resources;
+    struct resource *resource;
+    const struct platform_device_id *id_entry;
+    char *driver_override; /* Driver name to force a match */
+    /* MFD cell pointer */
+    struct mfd_cell *mfd_cell;
+    /* arch specific additions */
+    struct pdev_archdata archdata;
+};
+```
