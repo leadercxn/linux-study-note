@@ -133,10 +133,12 @@
                 const void *data;
                 };
             ```
-### platform底层驱动流程
-1. 定义一个 platform_driver 结构体变量 ，实现结构体中的各个成员变量，重点是实现 匹配方法
-2. 编写 probe 函数 ，当 驱动 和 设备 匹配成功以后，probe函数就会执行
-3. 定义，初始化好 platform_driver 结构体变量后， 需在驱动入口函数里调用 platform_driver_register() 函数向linux内核注册一个platform驱动
+* platform底层驱动流程
+    1. 定义一个 platform_driver 结构体变量 ，实现结构体中的各个成员变量，重点是实现 匹配方法
+    2. 编写 probe 函数 ，当 驱动 和 设备 匹配成功以后，probe函数就会执行
+    3. 定义，初始化好 platform_driver 结构体变量后， 需在驱动入口函数里调用 platform_driver_register() 函数向linux内核注册一个platform驱动
+
+* API接口
     注册函数
     ```C
         int platform_driver_register (struct platform_driver *driver)
@@ -192,7 +194,11 @@
         {
             ......
             cdev_init(&xxxdev.cdev, &xxx_fops); /* 注册字符设备驱动 */
+
             /* 函数具体内容 */
+
+            /* 创建类 */
+
             return 0;
         }
 
@@ -251,19 +257,112 @@
 2. 折腾式操作： 用 platform_device 这个结构体表示 platform 设备
 
 * 数据结构，路径 include/linux/platform_device.h
-```C
-struct platform_device {
-    const char *name;   //设备的名字（important , 要和 platform 驱动匹配的name 字段相同,如上述的name = "caonima"）
-    int id;
-    bool id_auto;
-    struct device dev;
-    u32 num_resources;
-    struct resource *resource;
-    const struct platform_device_id *id_entry;
-    char *driver_override; /* Driver name to force a match */
-    /* MFD cell pointer */
-    struct mfd_cell *mfd_cell;
-    /* arch specific additions */
-    struct pdev_archdata archdata;
-};
-```
+    ```C
+        struct platform_device {
+            const char *name;       //设备的名字（important , 要和 platform 驱动匹配的name 字段相同,如上述的name = "caonima"）
+            int id;
+            bool id_auto;
+            struct device dev;
+            u32 num_resources;
+            struct resource *resource;      //资源数量
+            const struct platform_device_id *id_entry;
+            char *driver_override;          /* Driver name to force a match */
+
+            /* MFD cell pointer */
+            struct mfd_cell *mfd_cell;
+
+            /* arch specific additions */
+            struct pdev_archdata archdata;
+        };
+    ```
+    * 层层递进的结构体数据
+        1. 资源结构体
+        ```C
+            struct resource {
+                    resource_size_t start;  //起始信息
+                    resource_size_t end;    //终止信息
+                    const char *name;       //资源名字
+                    unsigned long flags;    //资源类型
+                    struct resource *parent, *sibling, *child;
+                };
+        ```
+            资源类型 (路径:  include/linux/ioport.h)
+            ```C
+                #define IORESOURCE_BITS 0x000000ff      /* Bus-specific bits */
+                #define IORESOURCE_TYPE_BITS 0x00001f00 /* Resource type */
+                #define IORESOURCE_IO 0x00000100        /* PCI/ISA I/O ports */
+                #define IORESOURCE_MEM 0x00000200
+                #define IORESOURCE_REG 0x00000300       /* Register offsets */
+                #define IORESOURCE_IRQ 0x00000400
+                #define IORESOURCE_DMA 0x00000800
+                #define IORESOURCE_BUS 0x00001000
+            ```
+
+
+* API接口函数
+    1. 注册函数 
+    ```C
+        int platform_device_register(struct platform_device *pdev)
+
+        pdev：      要注册的 platform 设备。
+        返回值：     负数，失败； 0，成功。
+    ```
+
+    2. 注销函数
+    ```C
+        void platform_device_unregister(struct platform_device *pdev)
+    ```
+
+* platform设备框架
+    ```C
+        /* 寄存器地址定义*/
+        #define PERIPH1_REGISTER_BASE (0X20000000) /* 外设 1 寄存器首地址 */
+        #define PERIPH2_REGISTER_BASE (0X020E0068) /* 外设 2 寄存器首地址 */
+        #define REGISTER_LENGTH 4
+
+        /* 资源 */
+        static struct resource xxx_resources[] = {
+            [0] = {
+                .start = PERIPH1_REGISTER_BASE,
+                .end = (PERIPH1_REGISTER_BASE + REGISTER_LENGTH - 1),
+                .flags = IORESOURCE_MEM,    //内存类型
+            },
+            [1] = {
+                .start = PERIPH2_REGISTER_BASE,
+                .end = (PERIPH2_REGISTER_BASE + REGISTER_LENGTH - 1),
+                .flags = IORESOURCE_MEM,
+            },
+        };
+
+        /* platform 设备结构体 */
+        static struct platform_device xxxdevice = {
+            .name = "xxx-gpio",             //改名字要和驱动的名字一致
+            .id = -1,
+            .num_resources = ARRAY_SIZE(xxx_resources),
+            .resource = xxx_resources,
+        };
+
+        /* 设备模块加载 */
+        static int __init xxxdevice_init(void)
+        {
+            return platform_device_register(&xxxdevice);
+        }
+
+        /* 设备模块注销 */
+        static void __exit xxx_resourcesdevice_exit(void)
+        {
+            platform_device_unregister(&xxxdevice);
+        }
+
+        module_init(xxxdevice_init);
+        module_exit(xxxdevice_exit);
+    ```
+
+## 总结以上，以折腾式写 platform驱动 && platform设备，需要把驱动 和 设备分开两个文件编写，最后在应用层运行驱动文件，总线会根据驱动的名字 和 设备的名字进行匹配 。在驱动文件的 .probe 接口函数里，获取设备的资源，创建类什么的操作。
+
+
+
+# 设备树下的 platform 驱动编写
+* 操作的流程大概是
+    1. 在设备树中创建设备节点
+    2. 编写驱动代码
