@@ -112,7 +112,7 @@
                                     struct module *owner;
                                     const char *mod_name; /* used for built-in modules */
                                     bool suppress_bind_attrs; /* disables bind/unbind via sysfs */
-                                    const struct of_device_id *of_match_table;      //采用设备树配对表
+                                    const struct of_device_id *of_match_table;      //采用设备树配对表，结构体 数组
                                     const struct acpi_device_id *acpi_match_table;
                                     int (*probe) (struct device *dev);
                                     int (*remove) (struct device *dev);
@@ -210,7 +210,7 @@
             return 0;
         }
 
-        /* 匹配列表 important*/
+        /* 匹配列表 （针对设备树的方法） important*/
         static const struct of_device_id xxx_of_match[] = {
             { .compatible = "xxx-gpio" },   //该驱动的 compatible 特性 ，用来 匹配设备树中 具有相同 compatable 属性的设备
             { /* Sentinel */ }              //必须为空
@@ -365,4 +365,26 @@
 # 设备树下的 platform 驱动编写
 * 操作的流程大概是
     1. 在设备树中创建设备节点
+        1. 设备节点要添加 compatible 属性 来 匹配驱动
     2. 编写驱动代码
+        1. struct of_device_id 来定义 一个驱动的 设备树配对表
+        2. MODULE_DEVICE_TABLE 来声明驱动 的 设备匹配表
+        3. struct platform_driver 驱动的接口，需把 1 定义的 of_device_id 表放进该结构体成员内
+        ```C
+            static const struct of_device_id leds_of_match[] = {
+                        { .compatible = "atkalpha-gpioled" },       /* 和设备树某个设备节点 的 compatible 相同，兼容属性 */
+                        { /* Sentinel */ }      /*最后一个元素必须为空*/
+                    };
+
+            MODULE_DEVICE_TABLE(of, leds_of_match);     // 通过 MODULE_DEVICE_TABLE 声明一下 leds_of_match 这个设备匹配表。
+
+            static struct platform_driver leds_platform_driver = {
+                .driver = {
+                            .name = "imx6ul-led",   //驱动的名字
+                            .of_match_table = leds_of_match,
+                          },
+                .probe =  leds_probe,       //设备 和 驱动 匹配之后的执行函数
+                .remove = leds_remove,
+                };
+        ```
+
