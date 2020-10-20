@@ -77,3 +77,16 @@
        ```C
         setenv bootargs 'console=tty1 console=ttymxc0,115200 root=/dev/nfs rw nfsroot=192.168.18.101:/home/cxn/linux/nfs/rootfs ip=192.168.18.103:192.168.18.101:192.168.18.1:255.255.255.0::eth0:off'
        ```
+    8. 修改开发板的根文件系统中的文件 /home/cxn/linux/nfs/rootfs/etc/inittab 文件，加入内容
+        ```C
+            tty1::askfirst:-/bin/sh
+        ```
+    9. 设置LCD背光灯的亮度操作
+        在串口终端输入
+        ```C
+        echo 7 >/sys/devices/platform/backlight/backlight/backlight/brightness
+        ```
+    10. 在  Linux 源码中找到 drivers/tty/vt/vt.c 找出 blankinterval 变量，修改该值来修改显示屏无操作休眠时间
+
+
+
