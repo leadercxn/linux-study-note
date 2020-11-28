@@ -170,12 +170,23 @@
 
 # demo
     ```C
+        /* 上面写 设备操作数据结构体 */
+        static file_operations_t dev_ap3216c_fops ={
+            .owner = THIS_MODULE ,
+            .open  = ap3216c_open,
+            .read  = ap3216c_read,
+        };
+
         /* i2c 驱动的 probe 函数 
         *  I2C设备 和 I2C驱动 匹配以后，probe函数就会执行
         */
-        static int xxx_probe(struct i2c_client *client,
+        static int xxx_probe(struct i2c_client *client, struct i2c_device_id *p_i2c_device_id)
         {
-            /* 函数具体程序 */
+            /* 函数具体程序，利用该函数把设备节点的参数带下来，
+             * 利用该函数带出clinet结构体的数据，利用该结构体参数clinet 放进 i2c_transfer（clinet,&msg,n）
+             */
+            m_ap3216c_dev.private_data = client;
+
             return 0;
         }
 
