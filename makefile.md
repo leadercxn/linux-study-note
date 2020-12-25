@@ -206,6 +206,16 @@
         export KCONFIG_CONFIG KCONFIG_AUTOHEADER KCONFIG_AUTOCONFIG KCONFIG_TRISTATE
     ```
 
+    19. `realpath` 用于获取指定目录或文件的绝对路径
+    Shell 脚本中，通常会使用相对路径来指明文件，但有时候，我们需要用到绝对路径，此时可以使用 realpath 来获取。
+    ```demo
+        realpath [OPTIONS] FILES
+
+        realpath ./hello.tgz
+
+        返回:   /data/test/src/hello.tgz
+    ```
+
 
 
 
