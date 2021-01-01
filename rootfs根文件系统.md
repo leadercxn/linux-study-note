@@ -16,7 +16,7 @@
         cd /usr/local/arm/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/lib       //添加静态库
         cp *so* *.a /home/cxn/linux/rootfs/lib/ -d
     ```
-6. 特俗的操作，把库文件中的 ld-linux-armhf.so.3
+6. 特俗的操作，把库文件中的 ld-linux-armhf.so.3 删掉，重新从编译器的lib文件夹中拷贝过来
 7. 在usr文件夹里新增lib文件夹，并把编译器的动态文件库拷贝到新增的lib文件夹里
     ```
         cd /usr/local/arm/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/libc/usr/lib
