@@ -7,7 +7,48 @@
 # 构建根文件系统
 1. 修改顶层的Makefile文件， 添加编译器和编译的架构
 2. 修改 libbb/printable_string.c 和 /libbb/unicode.c 让其支持中文
+    1. libbb/printable_string.c
+    ```C
+        第33行:注释两行代码
+            /* if (c >= 0x7f)
+                break; */
+        第48行:修改代码
+            /* if (c < ' ' || c >= 0x7f) */
+                if( c < ' ')
+    ```
+    2. /libbb/unicode.c
+    ```C
+        第1022行:修改代码
+            /* *d++ = (c >= ' ' && c < 0x7f) ? c : '?'; */
+            *d++ = (c >= ' ') ? c : '?';
+        第1032行:修改代码
+            /* if (c < ' ' || c >= 0x7f) */
+            if(c < ' ')
+    ```
 3. make menuconfig
+    1. 配置
+    ```
+        Location:
+            -> Settings
+                > Build static binary (no shared libs) [不选中]
+        
+        Location:
+            -> Settings
+                > vi-style line editing commands [选中]
+
+        Location:
+            -> Linux Module Utilities
+                > Simplified modutils [不选中]
+
+                Location:
+            -> Linux System Utilities
+                -> mdev (16 kb)     [确保下面的全部选中，默认都是选中的]
+
+        Location:
+            -> Settings
+                -> Support Unicode  [选中]
+                    -> Check $LC_ALL, $LC_CTYPE and $LANG environment variables [选中]
+    ```
 4. make install CONFIG_PREFIX=/home/cxn/linux/nfs/rootfs  //安装文件系统，方便网络挂载文件系统
 5. 添加lib库文件，向在ubuntu安装好的rtoofs文件夹里，新建文件夹 lib，从编译器的libc/lib中获取
     ```
