@@ -7,15 +7,74 @@
 
 ## 相关工具的配置文件说明
 * L4.1.15_2.0.0-ga_mfg-tools\mfgtools-with-rootfs\mfgtools\cfg.ini 保存一些变量，
-* L4.1.15_2.0.0-ga_mfg-tools\mfgtools-with-rootfs\mfgtools\Profiles\Linux\OS Firmware\ucl2.xml， cmd用来操作文件，选定型号，选定储存的设备
+* L4.1.15_2.0.0-ga_mfg-tools\mfgtools-with-rootfs\mfgtools\Profiles\Linux\OS Firmware\ucl2.xml 操作文件，选定型号，选定储存的设备,针对烧录到emmc的产品，修改如下
+    ```xml
+        <LIST name="eMMC" desc="Choose eMMC as media">
+            <CMD state="BootStrap" type="boot" body="BootStrap" file ="firmware/u-boot.imx" ifdev="MX6ULL">Loading U-boot</CMD>
+
+            <CMD state="BootStrap" type="load" file="firmware/zImage" address="0x80800000"
+                loadSection="OTH" setSection="OTH" HasFlashHeader="FALSE" ifdev="MX6SL MX6SX MX7D MX6UL MX6ULL">Loading Kernel.</CMD>
+
+            <CMD state="BootStrap" type="load" file="firmware/%initramfs%" address="0x83800000"
+                loadSection="OTH" setSection="OTH" HasFlashHeader="FALSE" ifdev="MX6SL MX6SX MX7D MX6UL MX6ULL">Loading Initramfs.</CMD>
+
+            <CMD state="BootStrap" type="load" file="firmware/imx6ull_emmc_cxn.dtb" address="0x83000000"
+                loadSection="OTH" setSection="OTH" HasFlashHeader="FALSE" ifdev="MX6ULL">Loading device tree.</CMD>
+
+            <CMD state="BootStrap" type="jump" > Jumping to OS image. </CMD>
+
+
+            <!-- create partition -->
+            <CMD state="Updater" type="push" body="send" file="mksdcard.sh.tar">Sending partition shell</CMD>
+            <CMD state="Updater" type="push" body="$ tar xf $FILE "> Partitioning...</CMD>
+            <CMD state="Updater" type="push" body="$ sh mksdcard.sh /dev/mmcblk%mmc%"> Partitioning...</CMD>
+
+            <!-- burn uboot -->
+            <CMD state="Updater" type="push" body="$ dd if=/dev/zero of=/dev/mmcblk%mmc% bs=1k seek=768 conv=fsync count=8">clear u-boot arg</CMD>
+            <!-- access boot partition -->
+            <CMD state="Updater" type="push" body="$ echo 0 > /sys/block/mmcblk%mmc%boot0/force_ro">access boot partition 1</CMD>
+            <CMD state="Updater" type="push" body="send" file="files/u-boot.imx" ifdev="MX6ULL">Sending u-boot.bin</CMD>
+            <CMD state="Updater" type="push" body="$ dd if=$FILE of=/dev/mmcblk%mmc%boot0 bs=512 seek=2">write U-Boot to sd card</CMD>
+            <CMD state="Updater" type="push" body="$ echo 1 > /sys/block/mmcblk%mmc%boot0/force_ro"> re-enable read-only access </CMD>
+            <CMD state="Updater" type="push" body="$ mmc bootpart enable 1 1 /dev/mmcblk%mmc%">enable boot partion 1 to boot</CMD>
+
+            <!-- create fat partition -->
+            <CMD state="Updater" type="push" body="$ while [ ! -e /dev/mmcblk%mmc%p1 ]; do sleep 1; echo \"waiting...\"; done ">Waiting for the partition ready</CMD>
+            <CMD state="Updater" type="push" body="$ mkfs.vfat /dev/mmcblk%mmc%p1">Formatting rootfs partition</CMD>
+            <CMD state="Updater" type="push" body="$ mkdir -p /mnt/mmcblk%mmc%p1"/>
+            <CMD state="Updater" type="push" body="$ mount -t vfat /dev/mmcblk%mmc%p1 /mnt/mmcblk%mmc%p1"/>
+
+            <!-- burn zImage -->
+            <CMD state="Updater" type="push" body="send" file="files/zImage">Sending kernel zImage</CMD>
+            <CMD state="Updater" type="push" body="$ cp $FILE /mnt/mmcblk%mmc%p1/zImage">write kernel image to sd card</CMD>
+
+            <!-- burn dtb -->
+            <CMD state="Updater" type="push" body="send" file="files/imx6ull_emmc_cxn.dtb" ifdev="MX6ULL">Sending Device Tree file</CMD>
+
+            <CMD state="Updater" type="push" body="$ cp $FILE /mnt/mmcblk%mmc%p1/imx6ull_emmc_cxn.dtb" ifdev="MX6ULL">write device tree to sd card</CMD>
+
+            <CMD state="Updater" type="push" body="$ umount /mnt/mmcblk%mmc%p1">Unmounting vfat partition</CMD>
+
+            <!-- burn rootfs -->
+            <CMD state="Updater" type="push" body="$ mkfs.ext3 -F -E nodiscard /dev/mmcblk%mmc%p2">Formatting rootfs partition</CMD>
+            <CMD state="Updater" type="push" body="$ mkdir -p /mnt/mmcblk%mmc%p2"/>
+            <CMD state="Updater" type="push" body="$ mount -t ext3 /dev/mmcblk%mmc%p2 /mnt/mmcblk%mmc%p2"/>
+            <CMD state="Updater" type="push" body="pipe tar -jxv -C /mnt/mmcblk%mmc%p2" file="files/rootfs.tar.bz2" ifdev="MX6UL MX7D MX6ULL">Sending and writting rootfs</CMD>
+            <CMD state="Updater" type="push" body="frf">Finishing rootfs write</CMD>
+            <CMD state="Updater" type="push" body="$ umount /mnt/mmcblk%mmc%p2">Unmounting rootfs partition</CMD>
+            <CMD state="Updater" type="push" body="$ echo Update Complete!">Done</CMD>
+        </LIST>
+    ```
 * L4.1.15_2.0.0-ga_mfg-tools\mfgtools-with-rootfs\mfgtools\xxxx.vbs 运行mfgtool2.exe,并附带一堆参数来运行
 
 
-## 制作自己的系统
-* 自己编译的uboot，生成的uboot.imx
+## 制作自己的系统，根据 ucl2.xml 文件规定好的文件名
+* 自己编译的uboot，生成的   u-boot.imx 
 * 自己编译生成内核镜像文件， zImage
-* 自己编译生成设备树文件
-* 自己生成文件文件系统，压缩成压缩包（tar -vcjf）
+* 自己编译生成设备树文件，   imx6ull_emmc_cxn.dtb
+* 自己生成文件文件系统，压缩成压缩包   rootfs.tar.bz2 （tar -vcjf rootfs.tar.bz2 *）
+* 把上面四件套放到 mfgtools\Profiles\Linux\OS Firmware\files , mfgtools\Profiles\Linux\OS Firmware\firmware两个文件夹下
+* 运行 mfgtool2-yocto-mx-evk-emmc.vbs文件
 
 # 生成自己的系统之后
 1. ifconfig -a 查看网络设备
@@ -51,7 +110,7 @@
             改为：
         "findfdt="\
 			"if test $fdt_file = undefined; then " \
-				"setenv fdt_file imx6ull-14x14-evk.dtb;     //改为自己的设备树文件名称
+				"setenv fdt_file imx6ull_emmc_cxn.dtb; " \//改为自己的设备树文件名称
 			"fi;\0" \
     ```
 

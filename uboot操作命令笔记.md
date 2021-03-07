@@ -45,6 +45,21 @@
         ping 192.168.18.101
     ```
 
+# FTP 服务器
++ 操作
+    1. 下载安装
+        ```
+            sudo apt-get install vsftpd
+        ```
+    2. 编辑配置文件
+        ```
+            sudo vi /etc/vsftpd.conf
+
+                local_enable=YES
+                write_enable=YES
+        ```
+        
+    3. sudo /etc/init.d/vsftpd restart
 
 # nfs && SSH 搭建
 + ubuntu安装nfs服务，共享资源
@@ -58,6 +73,8 @@
 + ubuntu安装SSH服务
     ```
         sudo apt-get install openssh-server                     // 配置文件为 /etc/ssh/sshd_config
+        sudo apt-get install openssh-client
+        sudo service ssh start
     ```
 
 + 开发板执行命令
