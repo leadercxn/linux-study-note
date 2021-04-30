@@ -219,6 +219,38 @@
 
             ```
 
+        * 使用 scp 命令把PC端的文件传输到开发版
+            1. 从本地复制到远程板子
+                + 复制文件
+                    ```
+                        
+                        scp local_file remote_username@remote_ip:remote_folder 
+                        or
+                        scp local_file remote_username@remote_ip:remote_file 
+                        or
+                        scp local_file remote_ip:remote_folder 
+                        or
+                        scp local_file remote_ip:remote_file
+
+                        demo:
+                            scp bst_hello root@192.168.1.199:/root/bin
+                    ```
+                + 复制文件夹
+                    ```
+                        scp -r local_folder remote_username@remote_ip:remote_folder 
+                        or 
+                        scp -r local_folder remote_ip:remote_folder 
+                    ```
+            2. 从远程复制到本地
+                从远程复制到本地，只要将从本地复制到远程的命令的后2个参数调换顺序即可
+                ```
+                    scp root@www.runoob.com:/home/root/others/music /home/space/music/1.mp3 
+                ```
+                + 远程服务器防火墙有为scp命令设置了指定的端口，我们需要使用 -P 参数来设置命令的端口号
+                ```
+                    scp -P 4588 remote@www.runoob.com:/usr/local/sin.sh /home/administrator
+                ```
+
 
         * openssh 设置[ 个人使用这种方法，出现错误：sshd: no hostkeys available — exiting ]
             1. 添加密钥

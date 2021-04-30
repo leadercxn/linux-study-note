@@ -223,6 +223,24 @@
         };
     ```
 
+    3. spi_ioc_transfer，和内核中 spi_transfer 基本一样
+        在用户使用设备节点的IOCTL命令传输数据的时候，可能需要用到 spi_ioc_transfer结构体
+        ```C
+            struct spi_ioc_transfer {  
+            __u64               tx_buf;                   /* 写数据缓冲  */  
+            __u64               rx_buf;                   /* 读数据缓冲  */  
+   
+            __u32               len;                      /* 缓冲的长度 */  
+            __u32               speed_hz;                 /* 通信的时钟频率 */  
+   
+            __u16               delay_usecs;    /* 两个spi_ioc_transfer之间的延时 */  
+            __u8                 bits_per_word;           /* 字长（比特数）  */  
+            __u8                 cs_change;               /* 是否改变片选 */  
+            __u32               pad;                                
+            };  
+        ```
+
+
 * API
     1. 初始化 spi_message 结构体 （在使用 spi_message之前需要对其进行初始化,直接定义变量，再初始化。不用定义变量后，再赋值变量成员的值后再初始化）
     ```C
@@ -238,11 +256,11 @@
         m： spi_transfer 要加入的 spi_message。
     ```
 
-    3. 同步传输（会阻塞，知道等待SPI传输完成）
+    3. 同步传输（会阻塞，直到等待SPI传输完成）
     ```C
         int spi_sync(struct spi_device *spi, struct spi_message *message)
 
-        spi： 要进行数据传输的 spi_device。
+        spi： 要进行数据传输的 spi_device
         message：要传输的 spi_message。
         返回值： 无。
     ```
@@ -251,9 +269,17 @@
     ```C
         int spi_async(struct spi_device *spi, struct spi_message *message)
 
-        spi： 要进行数据传输的 spi_device。
+        spi： 要进行数据传输的 spi_device
         message：要传输的 spi_message。
     ```
+
+    5. static inline void spi_set_drvdata(struct spi_device *spi, void *data)
+        将设备的私有数据指针指向该设备
+        * demo
+        ```C
+            spi_set_drvdata(spi, spidev);
+        ```
+
 
 # 编写具体额设备驱动
 * 读、写操作的流程
@@ -293,6 +319,20 @@ static int spi_receive(struct spi_device *spi, u8 *buf, int len)
     return ret;
 }
 ```
+
+# 应用层
+1. SPI_IOC_MESSAGE(N)一次进行双向/多次读写操作
+    demo
+    ```C
+        struct spi_ioc_transfer k;
+
+        memset(&k, 0, sizeof(k)); /* clear k */
+        k.tx_buf = (unsigned long) out_buf;
+        k.rx_buf = (unsigned long) in_buf;
+        k.len = command_size;
+        k.cs_change = 0;
+        a = ioctl(spi_device, SPI_IOC_MESSAGE(1), &k);
+    ```
 
 
 # SPI(icm20608) 与 I2C(ap3216c器件) 底层驱动发送、接收流程的区别

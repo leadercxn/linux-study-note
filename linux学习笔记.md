@@ -96,4 +96,23 @@
                 * .c .h
         * Makefile
 
+# 遇到 磁盘已满的具体处理
+1. 处理 在虚拟机中把磁盘增大后，他不会把原磁盘直接增大，而是增大剩余空间，需要把剩余空间添加分区，后再挂载到文件系统中
+    [在Linux下对未分配剩余空间分区挂载](https://blog.csdn.net/chiyanxi1706/article/details/100799682?utm_medium=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.control&dist_request_id=1328603.58688.16151957706854447&depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.control)
+
+
+# 遇到交换区内存不足，增大交换区
+1. ubuntu系统线增大交换区大小的操作[链接](https://blog.csdn.net/m0_46537958/article/details/108469587)
+
+
+# Linux内核version magic不一致问题
+* 现象: 
+    ```shell
+        insmod xxx.ko
+
+        drv_hrtimer: version magic '4.1.0-linux4sam_5.2-subversion_1.0.1-gd78c9ad-dirty mod_unload ARMv7 p2v8 ' should be '4.1.0-linux4sam_5.2-subversion_1.0.1-gecefda4-dirty mod_unload ARMv7 p2v8 '
+    ```
+* 解决方法 [链接](https://blog.csdn.net/eric_rain/article/details/105477817) 
+    1. 使用同一版本的内核编译,并更新
+    2. 可以在linux配置中去除这个后缀,version magic就会变成固定的版本号.配置办法是在内核源码顶层文件的make nenuconfig: Geberal setup ->Auto calculation of the decompressed kernel image address配置取消.后续内核加载就不需要考虑该问题了(不推荐)
 

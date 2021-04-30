@@ -216,9 +216,6 @@
         返回:   /data/test/src/hello.tgz
     ```
 
-
-
-
 * 可选参数
 
     `-C`    -C $(KDIR) 指明跳转到源码目录下读取那里的Makefile；
@@ -242,3 +239,25 @@
 
 * Makefile的内嵌变量
     1. CURDIR   Makefile的内嵌变量，自动设置为当前目录
+
+
+
+# 脚本
+* 关键字
+    1. `dirname` 表示提取参数里的目录
+        ```sh
+            dirname "modules/tools/planning_traj_plot/run.s"
+                => modules/tools/planning_traj_plot
+        ```
+
+    2. `${BASH_SOURCE[0]}` 表示bash脚本的第一个参数（如果第一个参数是bash，表明这是要执行bash脚本，这时"${BASH_SOURCE[0]}"自动转换为第二个参数
+        ```sh
+            bash modules/tools/planning_traj_plot/run.sh 
+
+            "${BASH_SOURCE[0]}"代表的是modules/tools/planning_traj_plot/run.sh
+
+            cd "$( dirname "${BASH_SOURCE[0]}" )" # 表示切换到刚才提取的目录
+
+            DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" #导出脚本的路径
+        ```
+ 
