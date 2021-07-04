@@ -1,3 +1,4 @@
+
 repo init -u https://github.com/STMicroelectronics/oe-manifest.git -b refs/tags/openstlinux-5.10-dunfell-mp1-21-03-31
 
 DISTRO=fsl-imx-x11 MACHINE=imx6ull14x14evk source fsl-setup-release.sh -b build
@@ -100,3 +101,50 @@ bitbake st-image-weston
     
     一般工作方法：
     把以上3件套拿出来单独管理
+
+## layer 目录架构 && 文件说明
+1.  .bbappend && .bb 文件
+    + 创建append文件时，必须使用对应recipe相同的名字。例如someapp_2.7.bbappend必须应用于someapp_2.7.bb，这意味着这两个文件是版本特定的。如果对应的recipe重命名升级了版本，你也需要同时改动.bbappend文件名。如果检测到.bbappend文件没有所匹配的recipe，BitBake会显示错误
+    + 使用.bbappend文件，你可以在无需拷贝另一个Layer的recipe到你的Layer中，就能增加或修改内容。.bbappend文件在你的Layer中，而被附加内容的.bb文件则在另一个Layer中
+2.  <layer dir> 目录下的 conf/layer.conf
+    + 最简单的方式是拷贝一份已有配置到你的Layer配置目录中，然后根据需要改动它。
+    + demo
+        ```
+            # We have a conf and classes directory, add to BBPATH
+            BBPATH .= ":${LAYERDIR}"
+
+            # We have recipes-* directories, add to BBFILES
+            BBFILES += "${LAYERDIR}/recipes-*/*/*.bb \
+                        ${LAYERDIR}/recipes-*/*/*.bbappend"
+
+            BBFILE_COLLECTIONS += "yoctobsp"
+            BBFILE_PATTERN_yoctobsp = "^${LAYERDIR}/"
+            BBFILE_PRIORITY_yoctobsp = "5"
+            LAYERVERSION_yoctobsp = "4"
+            LAYERSERIES_COMPAT_yoctobsp = "warrior"
+        ```
+    + 相关定义
+        + BBPATH: 将此Layer根目录添加到BitaBake搜索路径中。利用BBPATH变量，BitBake可以定位类文件（.bbclass），配置文件，和被include的文件。BitBake使用匹配BBPATH名字的第一个文件，这与给二进制文件使用的PATH变量类似。同样也推荐你为你的Layer中类文件和配置文件起一个唯一的名字。
+        + BBFILES: 定义Layer中recipe的路径
+        + BBFILE_COLLECTIONS: 创建唯一标识符以给OE构建系统参照。此示例中，标识符"yoctobsp"代表"meta-yocto-bsp"Layer。
+        + BBFILE_PATTERN: 解析时提供Layer目录
+        + BBFILE_PRIORITY: OE构建系统在不同Layer找到相同名字recipe时所参考的使用优先级
+        + LAYERVERSION: Layer的版本号。你可以通过LAYERDEPENDS变量指定使用特定版本号的Layer
+
+
+## layer 操作
+* layer的新增和添加到bitbake的构建命令中
+    1. 新增layer
+        ```
+            bitbake-layers create-layer your_layer_name
+        ```
+    2. 启用自建的layer,需要在 <build dir> 目录下的 conf/bblayers.conf 的 BBLAYERS 变量中，新增指定layer的路径 ,或使用命令 
+        ```
+            bitbake-layers add-layer your_layer_name
+        ```
+
+## 定制化镜像
+* 定制化镜像
+    1. 修改 `local.conf` 文件，
+
+    2. 使用自定义`IMAGE_FEATURES` 和 `EXTRA_IMAGE_FEATURES`定制化镜像 
