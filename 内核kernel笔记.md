@@ -142,6 +142,10 @@
 
 * linuxn内核启动过于复杂，后期自己有空再分析
 
+# initrd 的理解
+* 链接
+    [什么是initrd?](https://blog.csdn.net/weixin_34237596/article/details/94293148?utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EsearchFromBaidu%7Edefault-2.pc_relevant_baidujshouduan&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EsearchFromBaidu%7Edefault-2.pc_relevant_baidujshouduan)
+
 
 
 # 内核移植

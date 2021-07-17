@@ -14,7 +14,7 @@
     ```
 + 修改环境变量带有空格 ,用单引号''
     ```
-        setenv bootcmd 'console=ttymxc0,115200 root=/dev/mmcblk1p2 rootwait rw '
+        setenv bootargs 'console=ttymxc0,115200 root=/dev/mmcblk1p2 rootwait rw '
         seveenv
     ```
 + 新建环境变量 
@@ -180,6 +180,7 @@
         mmc erase blk# cnt
     ```
 
++ ` ls mmc 0:1` 显示当前设备的分区信息
 
 
 # FAT 文件系统（并非所有的文件系统）

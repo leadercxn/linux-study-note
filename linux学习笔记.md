@@ -3,14 +3,28 @@
 + 主机能无线上网（关闭防火墙，禁用其他网卡），ubuntu能和主机互ping，主机ipv4的DHCP设为自动IP，cmd命令ipconfig查看主机的ip地址和网段，例如主机ip：192.168.18.100  掩码：255.255.255.0 ，网关192.168.18.1 ，虚拟机网络IPv4设为手动，ip地址设为192.168.18.101，掩码：255.255.255.0  网关192.168.18.1  ，其他虚拟网络编辑器 VMnet0设为桥接模式，网卡选主机的无线网卡，然后就可以在虚拟机上上网。不知为何，`ps:用主机接手机的热点，这方法不可用`
 
 # sd卡问题
-+ 重装VMware_tool
-    ```
-       cd VM_Tool/vmware-tools-distrib/
-        sudo ./vmware-install,pl
-    ```
-+ 用读卡器插上，关闭ubuntu，虚拟机设置、USB控制器，选择USB2.0，再开启ubuntu
-+ 选择 虚拟机、可移动设备、Realtek usb2.0
-+ ls /dev/sd   就会看到挂载的sdb 读卡器
+* 通过虚拟机的设置操作
+    + 重装VMware_tool
+        ```
+        cd VM_Tool/vmware-tools-distrib/
+            sudo ./vmware-install,pl
+        ```
+    + 用读卡器插上，关闭ubuntu，虚拟机设置、USB控制器，选择USB2.0，再开启ubuntu
+    + 选择 虚拟机、可移动设备、Realtek usb2.0
+    + ls /dev/sd   就会看到挂载的sdb 读卡器
+* 专业做法：
+    * 原因：插上读卡器后，ubuntu虚拟机会自动挂载到系统
+    * 解决方法：
+        1. 卸载挂载
+    * 操作
+        ```shell
+            df -h   //查看读卡器挂载的路径
+            sudo umonut /dev/sdb1   //卸载挂载设备
+
+            ls /dev/sd*         //即可看到 sdb1 的设备
+        ```
+
+
 
 # 我的代码管理
 + 路径： /mnt/hgjs/vmware_share/code/register_code/1_leds
